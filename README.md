@@ -2,8 +2,6 @@
     Assignment 1
 </h1>
 
-<p style="text-align: right">201618130120 刘杰</p>
-
 ## What i want to know?
 
 ​	I want know the difference between 1900 and 2000 years at the population structure of the United States. And at the same time, I want to present more information as far as possible.
