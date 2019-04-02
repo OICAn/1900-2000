@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Firstt-2</title>
+	<script src="d3.v4.js"></script>
+	<link rel="shortcut icon" href="bitbug_favicon.ico" type="image/x-icon" />
+	<style type="text/css">
+		.axis path,
+		.axis line{
+			fill: none;
+			stroke: black;
+			shape-rendering: crispEdges;
+		}
+		.axis text{
+			font-family: sans-serif;
+			font-size: 11px;
+		}
+		.female {
+		  font: 300 78px Helvetica Neue;
+		  fill: pink;
+		}
+		.male {
+			font: 300 78px Helvetica Neue;
+			fill: blue;
+		}
+	</style>
+</head>
+<body>
+	<h1 style="position: relative; left: 18%;">美国1900年与2000年人口结构的比较</h1>
+	<script type="text/javascript">
+		var dataset = [];
+		var width = 1500;
+		var height = 1200;
+		var padding = 65;
+		var svg = d3.select("body")
+					.append("svg")
+					.attr("width", width)
+					.attr("height", height);
+		var useful = [1];
+		var color = ["purple", "green", "red", "blue"];
+
+
+		var rowConverter = function (d) {
+			return {
+				Sex: parseInt(d.Sex),
+				Year: parseInt(d.Year),
+				Age: parseInt(d.Age),
+				People: parseFloat(d.People) / 10000
+			};
+		};
+
+		d3.csv("census2000.csv", rowConverter, function (data) {
+			dataset = data;
+
+
+			var xScale_right = d3.scaleLinear()
+							.domain([d3.min(dataset, function (d) {
+								return d.People;
+							}), d3.max(dataset, function (d) {
+								return d.People;
+							})])
+							.range([0, (width/2 - 2 * padding)])
+							.nice();
+
+			var xScale_left = d3.scaleLinear()
+								.domain([d3.min(dataset, function (d) {
+									return d.People;
+								}), d3.max(dataset, function (d) {
+									return d.People;
+								})])
+								.range([(width/2 - 2 * padding), 0])
+								.nice();
+
+			var yScale = d3.scaleLinear()
+							.domain([0, d3.max(dataset, function (d) {
+								return d.Age;
+							}) + 5])
+							.range([height - padding, 2*padding]);
+			svg.selectAll("rect")
+				.data(dataset)
+				.enter()
+				.append("rect")
+				.attr("x", function (d) {
+					return d.Sex==1 ? (width/2) : 2*padding + xScale_left(d.People);
+				})
+				.attr("y", function (d) {
+					return d.Year==1900 ? yScale(d.Age) - 28 : yScale(d.Age) - 48;
+				})
+				.attr("height", 18)
+				.attr("width", function (d) {
+					return d.Sex==1 ? xScale_right(d.People) : width/2-2*padding-xScale_left(d.People);
+				})
+				.attr("fill", function (d) {
+					return d.Sex==1 ? d.Year==1900 ? "blue" : "green" : d.Year==1900 ? "red" : "purple"; //rgb(128,0,255)
+				});
+
+			svg.selectAll("text")
+				.data(dataset)
+				.enter()
+				.append("text")
+				.text(function (d) {
+					return Math.round(d.People);
+				})
+				.attr("x", function (d) {
+					//较复杂的逻辑判断，主要是不同情况的x值不同
+					return d.Sex==1 ? d.People<40 ? width/2+xScale_right(d.People) : width/2 : d.People<40 ? 2*padding+xScale_left(d.People)-16 : d.People<100 ? width/2 - 16 : d.People<1000 ? width/2 - 24 : width/2 - 32;
+				})
+				.attr("y", function (d) {
+					return d.Year==1900 ? (yScale(d.Age) - 28 + 14) : (yScale(d.Age) - 48 + 14);
+				})
+				.attr("font-family", "sans-serif")
+			   	.attr("font-size", "13px")
+			   	.attr("fill", function (d) {
+			   		return d.People >= 40 ? "white" : "black";
+			   	});
+
+			var xAxis_right = d3.axisBottom()
+							.scale(xScale_right);
+
+			var xAxis_left = d3.axisBottom()
+							.scale(xScale_left);
+
+			var yAxis = d3.axisLeft()
+							.scale(yScale)
+							.tickValues([5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90])
+							.tickSize(6);
+
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + (width/2) + ", " + (height - padding) + ")")
+				.call(xAxis_right);
+
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + 2*padding + ", " + (height - padding) + ")")
+				.call(xAxis_left);
+
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + (width/2) + ", 0)")
+				.call(yAxis);
+
+			var female = svg.append("text")
+						.attr("class", "female")
+						.attr("dy", "1em")
+						.text("Female");
+
+			var male = svg.append("text")
+						.attr("class", "male")
+						.attr("dx", "16em")
+						.attr("dy", "1em")
+						.text("Male");
+
+			var Age = svg.append("text")
+						.attr("dx", "45em")
+						.attr("dy", "7em")
+						.text("Age")
+						//.attr("transform", "rotate(-90)")
+						;
+
+			var People = svg.append("text")
+						.attr("dx", "82em")
+						.attr("dy", "70em")
+						.text("人数(万人)")
+						//.attr("transform", "rotate(-90)")
+						;
+
+			var legend = svg.append("g")
+							.attr("class", "legend")
+							.attr("x", width - padding)
+							.attr("y", padding)
+							.attr("height", 100)
+							.attr("width", 100);
+
+			legend.selectAll("g")
+					.data(color)
+					.enter()
+					.append("g")
+					.each(function (d, i) {
+						var g = d3.select(this);
+						g.append("rect")
+							.attr("x", width - 3*padding)
+							.attr("y", function () {
+								return i < 2 ? 2*padding + i*30 : 2*padding + 30 + i * 30;
+							})
+							.attr("width", 30)
+							.attr("height", 30)
+							.style("fill", d);
+						g.append("text")
+							.attr("x", width - 2 * padding - 30)
+							.attr("y", function () {
+								return i==0 ? 2*padding+38 : i==2 ? 2*padding + 90 + 38 : null;
+							})
+							.text(function () {
+								return i==0 ? "2000年" : i==2 ? "1900年" : null;
+							})
+							.attr("font-family", "sans-serif")
+			   				.attr("font-size", "18px");
+					});
+
+		});
+
+	</script>
+</body>
+</html>
